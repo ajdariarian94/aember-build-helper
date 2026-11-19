@@ -1,0 +1,4 @@
+__pycache__/
+aember-out/
+build/
+.aember-pack-*.iid

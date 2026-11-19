@@ -1,0 +1,11 @@
+{
+  "name": "hello-cmake",
+  "arch": "x64-poky-linux",
+  "rootfs": { "dir": "../../build/hello-cmake/aember-staging/hello-cmake" },
+  "libs": { "sysroot": "/aember_ws/aember/build/aember-resources/x64-poky-linux/sdk/sysroots/core2-64-poky-linux" },
+  "command": ["/usr/bin/hello-cmake"],
+  "env": { "GREETING": "CMake" },
+  "network": "isolated",
+  "restart_policy": "on-failure",
+  "stop_timeout": 5
+}

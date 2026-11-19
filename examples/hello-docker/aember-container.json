@@ -1,0 +1,11 @@
+{
+  "name": "hello-docker",
+  "arch": "x64-poky-linux",
+  "rootfs": { "dockerfile": "Dockerfile", "context": "." },
+  "env": { "GREETING": "a Dockerfile" },
+  "network": "host",
+  "restart_policy": "always",
+  "max_restart_attempts": 5,
+  "restart_delay": 5,
+  "stop_timeout": 10
+}
