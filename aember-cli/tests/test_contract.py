@@ -1,8 +1,8 @@
 import unittest
 from pathlib import Path
 
-from aember_build_helper import aember
-from aember_build_helper.manifest import parse
+from aember import contract
+from aember.manifest import parse
 
 
 def manifest(**kw):
@@ -13,7 +13,7 @@ def manifest(**kw):
 
 def conf(**kw) -> dict[str, list[str]]:
     out: dict[str, list[str]] = {}
-    for line in aember.lxc_config(manifest(**kw)).splitlines():
+    for line in contract.lxc_config(manifest(**kw)).splitlines():
         if "=" in line and not line.startswith("#"):
             k, v = (x.strip() for x in line.split("=", 1))
             out.setdefault(k, []).append(v)
@@ -73,7 +73,7 @@ class LxcConfigTest(unittest.TestCase):
 
 class EntryTest(unittest.TestCase):
     def test_entry_matches_containers_json(self):
-        e = aember.containers_entry(
+        e = contract.containers_entry(
             manifest(restart_policy="on-failure"), ["/app", "-v"]
         )
         self.assertEqual(e["name"], "app")

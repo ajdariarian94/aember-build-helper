@@ -1,4 +1,4 @@
-# Any Dockerfile works: aember-pack builds it for the aember target's
+# Any Dockerfile works: aember-cli builds it for the aember target's
 # platform and exports the file system. (A RUN step for another
 # architecture needs binfmt/qemu-user on the build machine.)
 FROM alpine:3.20

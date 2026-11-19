@@ -1,5 +1,5 @@
 """
-`aember-pack install`: put a built container into an aember board's
+`aember install`: put a built container into an aember board's
 rootfs overlay (resources/<arch>/rootfs in the aember repository):
 
     var/lib/aember/<name>/<name>.squashfs, lxc.container.conf   copied
@@ -16,7 +16,7 @@ import logging
 import shutil
 from pathlib import Path
 
-log = logging.getLogger("aember-pack")
+log = logging.getLogger("aember.install")
 
 
 def overlay_dir(target: Path, arch: str) -> Path:

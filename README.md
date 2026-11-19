@@ -2,7 +2,7 @@
 
 Pack your project into an **aember-ready LXC container**. Add this repository
 to your project as a git submodule, describe the container in one JSON file,
-and `aember-pack build` produces what an [aember](https://github.com/ajdariarian94/aember)
+and its `aember` CLI (`aember-cli/run.py build`) produces what an [aember](https://github.com/ajdariarian94/aember)
 device runs:
 
 ```
@@ -12,7 +12,7 @@ aember-out/<name>/
   overlay/var/lib/aember/<name>/lxc.container.conf
 ```
 
-`aember-pack install <aember checkout>` puts it into a board's rootfs overlay
+`aember-cli/run.py install <aember checkout>` puts it into a board's rootfs overlay
 (`resources/<arch>/rootfs`), and the next `aember app pack` / `aember rpi image`
 / `aember usb image` ships it.
 
@@ -32,11 +32,15 @@ The aember dev container has all of them.
 
 ```bash
 git submodule add https://github.com/ajdariarian94/aember-build-helper tools/aember-build-helper
-tools/aember-build-helper/aember-pack init          # writes aember-container.json
+tools/aember-build-helper/aember-cli/run.py init       # writes aember-container.json
 # edit it, then:
-tools/aember-build-helper/aember-pack build         # → aember-out/<name>/
-tools/aember-build-helper/aember-pack install ../aember   # into aember's overlay
+tools/aember-build-helper/aember-cli/run.py build      # → aember-out/<name>/
+tools/aember-build-helper/aember-cli/run.py install ../aember   # into aember's overlay
 ```
+
+The CLI lives in `aember-cli/` and is called `aember`, like in aember,
+aember-resources and aember-website (`aember-cli/run.py --help`). Its
+commands: `init`, `check`, `build`, `install`.
 
 In aember: `aember app pack` and `aember app launch` (or build a board image).
 The container starts with the others; its output is in
@@ -123,7 +127,7 @@ Paths are relative to the manifest's directory.
 | `console_log` | `true` | keep the app's output in `/var/log/aember-container-<name>.log` (1 MB, rotated) |
 | `compression` | `xz` | SquashFS compression: `xz` (mounts everywhere, also WSL), `zstd`, `gzip` |
 
-`aember-pack check` validates it.
+`aember-cli/run.py check` validates it.
 
 ## How it runs on aember
 
@@ -146,7 +150,7 @@ graceful stop. The image gets the mount points aember needs (`/proc`, `/sys`,
 ## Tests
 
 ```bash
-python3 -m unittest discover -s tests -t .     # unit tests (some need mksquashfs, gcc)
+python3 -m unittest discover -s aember-cli/tests -t aember-cli   # unit tests (some need mksquashfs, gcc)
 tests/e2e/aember-qemu.sh /aember_ws/aember     # in the aember dev container
 ```
 

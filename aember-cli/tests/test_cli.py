@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from aember_build_helper.cli import main
+from aember.cli import main
 
 from .helpers import needs_squashfs
 

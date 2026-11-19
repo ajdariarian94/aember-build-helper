@@ -24,10 +24,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import BinaryIO, Iterator
 
-from . import aember, libs
+from . import contract, libs
 from .manifest import Manifest
 
-log = logging.getLogger("aember-pack")
+log = logging.getLogger("aember.rootfs")
 
 
 @dataclass
@@ -56,7 +56,7 @@ def docker() -> str:
 
 def build_dockerfile(m: Manifest) -> str:
     """docker build for the target platform; returns the image id."""
-    iid = m.base / f".aember-pack-{m.name}.iid"
+    iid = m.base / f".aember-build-{m.name}.iid"
     try:
         subprocess.run(
             [
@@ -108,7 +108,7 @@ def docker_export(image: str, platform: str) -> Iterator[BinaryIO]:
     """The file system of @p image as a tar stream (a stopped container)."""
     cid = subprocess.run(
         # The command is never run: some images have none, create needs one.
-        [docker(), "create", "--platform", platform, image, "/aember-pack-none"],
+        [docker(), "create", "--platform", platform, image, "/aember-none"],
         capture_output=True,
         text=True,
         check=True,
@@ -244,7 +244,7 @@ def write_stream(m: Manifest, sink: BinaryIO) -> ImageConfig:
                     seen.add(parent)
                     out.addfile(_dir_member(parent))
 
-        for key, mode in aember.MOUNT_POINTS.items():
+        for key, mode in contract.MOUNT_POINTS.items():
             if key not in seen:
                 seen.add(key)
                 out.addfile(_dir_member(key, mode))

@@ -2,9 +2,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from aember_build_helper.manifest import Bridge, ManifestError, load, parse
+from aember.manifest import Bridge, ManifestError, load, parse
 
 BASE = Path("/proj")
+# A valid manifest; the bad cases change one key of it.
+VALID = {"name": "a", "rootfs": {"dir": "x"}, "command": ["/a"]}
 
 
 def ok(**kw):
@@ -63,14 +65,14 @@ class ManifestTest(unittest.TestCase):
         bad = [
             {"name": "Bad_Name", "rootfs": {"dir": "x"}, "command": ["/a"]},
             {"name": "a", "rootfs": {}, "command": ["/a"]},
-            {"name": "a", "rootfs": {"dir": "x", "docker_image": "y"}, "command": ["/a"]},
+            {**VALID, "rootfs": {"dir": "x", "docker_image": "y"}},
             {"name": "a", "rootfs": {"dir": "x"}},  # no command
-            {"name": "a", "rootfs": {"dir": "x"}, "command": ["/a"], "arch": "riscv"},
-            {"name": "a", "rootfs": {"dir": "x"}, "command": ["/a"], "network": "nat"},
-            {"name": "a", "rootfs": {"dir": "x"}, "command": ["/a"], "restart_policy": "x"},
-            {"name": "a", "rootfs": {"dir": "x"}, "command": ["/a"], "stop_timeout": -1},
-            {"name": "a", "rootfs": {"dir": "x"}, "command": ["/a"], "env": {"A": 1}},
-            {"name": "a", "rootfs": {"dir": "x"}, "command": ["/a"], "typo": 1},
+            {**VALID, "arch": "riscv"},
+            {**VALID, "network": "nat"},
+            {**VALID, "restart_policy": "x"},
+            {**VALID, "stop_timeout": -1},
+            {**VALID, "env": {"A": 1}},
+            {**VALID, "typo": 1},
             {"name": "a", "rootfs": {"dir": "x"}, "command": ["/a"],
              "files": [{"src": "a", "dst": "relative"}]},
         ]  # fmt: skip

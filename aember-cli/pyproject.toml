@@ -1,0 +1,17 @@
+[project]
+name = "aember-build-helper-cli"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+aember = "aember.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["aember*"]
+
+[tool.ruff]
+line-length = 88
+
+[tool.black]
+line-length = 88

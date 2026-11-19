@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from aember_build_helper.install import install, merge_entry, overlay_dir
+from aember.install import install, merge_entry, overlay_dir
 
 
 def bundle(root: Path, name="app", link=None) -> Path:

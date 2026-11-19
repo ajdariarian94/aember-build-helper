@@ -21,7 +21,7 @@ aember-out/<name>/overlay/var/lib/aember/<name>/<name>.squashfs  → read-only r
 aember-out/<name>/overlay/var/lib/aember/<name>/lxc.container.conf
 ```
 
-and to merge that into an aember board overlay (`aember-pack install`).
+and to merge that into an aember board overlay (`aember-cli/run.py install`).
 
 **Not pushed yet:** commit locally only; never push or add a remote unless
 the user asks.
@@ -29,18 +29,19 @@ the user asks.
 ## Layout
 
 ```
-aember-pack                      launcher (adds the repo to sys.path; no install)
-aember_build_helper/
-  cli.py                         argparse: init, check, build, install
-  manifest.py                    aember-container.json → Manifest (validation, defaults)
-  aember.py                      aember's contract: paths, lxc.container.conf, containers.json entry
-  rootfs.py                      rootfs as ONE tar stream → `mksquashfs - out -tar`
-  libs.py                        NEEDED + interpreter resolution from a sysroot (readelf)
-  install.py                     copy into an overlay, merge containers.json
-cmake/AemberContainer.cmake      aember_container(): cmake --install to staging + aember-pack build
+aember-cli/                      the `aember` CLI (same place and name as in the sibling repos)
+  run.py                         launcher (puts aember-cli/ first on sys.path; no install)
+  pyproject.toml                 script `aember`; no dependencies
+  aember/cli.py                  argparse: init, check, build, install
+  aember/manifest.py             aember-container.json → Manifest (validation, defaults)
+  aember/contract.py             aember's contract: paths, lxc.container.conf, containers.json entry
+  aember/rootfs.py               rootfs as ONE tar stream → `mksquashfs - out -tar`
+  aember/libs.py                 NEEDED + interpreter resolution from a sysroot (readelf)
+  aember/install.py              copy into an overlay, merge containers.json
+  tests/test_*.py                unittest (stdlib); squashfs/gcc tests skip without the tools
+cmake/AemberContainer.cmake      aember_container(): cmake --install to staging + run.py build
 examples/hello-docker/           Dockerfile source (Alpine + a shell script)
 examples/hello-cmake/            C++23 + aember SDK + libs from the sysroot
-tests/test_*.py                  unittest (stdlib); squashfs/gcc tests skip without the tools
 tests/e2e/aember-qemu.sh         both examples into aember, QEMU boot, checks
 ```
 
@@ -55,7 +56,7 @@ tests/e2e/aember-qemu.sh         both examples into aember, QEMU boot, checks
   of a directory: it needs root for ownership and doubles the disk use.
 - Files from `"files"`, `"libs"` and `"dir"` sources are owned by root in
   the image; Docker sources keep their owners.
-- **aember's contract lives in `aember.py`.** It must match aember's
+- **aember's contract lives in `aember/contract.py`.** It must match aember's
   `services/containerd` (container-parser.cpp, container-manager.cpp,
   init-wrapper.h): the paths under `/var/lib/aember`, the containers.json
   keys, what containerd mounts (`/host-logs`, `/busybox.aember-init`, the
@@ -70,6 +71,11 @@ tests/e2e/aember-qemu.sh         both examples into aember, QEMU boot, checks
 - Networks: `host` → `lxc.net.0.type = none` (shares aember's network
   namespace), `isolated` → `empty`, bridge → `veth` on an aember bridge
   (containers.json `"bridges"`; aember does no NAT there).
+- The CLI is called `aember` and lives in `aember-cli/`, like in aember,
+  aember-resources and aember-website; keep that name and layout. Its
+  package is `aember` too, so never `pip install` it into aember's dev
+  container venv (aember's own CLI is the `aember` package there); always
+  run it through `run.py`. Loggers: `aember.<module>`.
 - Errors are `ManifestError` / `RuntimeError` with a message for the user;
   `cli.main` turns them into exit status 1. No tracebacks for user mistakes.
 - Docker: always `--platform` from `PLATFORMS`; `docker create` gets a
@@ -77,9 +83,9 @@ tests/e2e/aember-qemu.sh         both examples into aember, QEMU boot, checks
 
 ## Tests
 
-- `python3 -m unittest discover -s tests -t .` (host or dev container). Add a
-  test for every change; tests needing `mksquashfs` 4.6+ or gcc use the
-  skip decorators in `tests/helpers.py`.
+- `python3 -m unittest discover -s aember-cli/tests -t aember-cli` (host or
+  dev container). Add a test for every change; tests needing `mksquashfs`
+  4.6+ or gcc use the skip decorators in `aember-cli/tests/helpers.py`.
 - Before calling a change to the image layout, lxc config or containers.json
   entry done, run `tests/e2e/aember-qemu.sh /aember_ws/aember` in the aember
   dev container (docker CLI, SDK, QEMU). It modifies aember's x64 overlay

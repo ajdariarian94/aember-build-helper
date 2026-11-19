@@ -1,5 +1,5 @@
 #!/bin/bash
-# End to end: pack both examples with aember-pack, add them to an aember
+# End to end: pack both examples with aember-cli (run.py), add them to an aember
 # checkout's x64 overlay, pack aember and boot it in QEMU; both containers
 # must run and print. The overlay is restored afterwards (and re-packed).
 #
@@ -29,7 +29,7 @@ restore() {
 trap restore EXIT
 
 echo "e2e: 1/4 hello-docker (Dockerfile → container)"
-(cd "$HELPER/examples/hello-docker" && "$HELPER/aember-pack" build -o "$WORK/out")
+(cd "$HELPER/examples/hello-docker" && "$HELPER/aember-cli/run.py" build -o "$WORK/out")
 
 echo "e2e: 2/4 hello-cmake (aember SDK, CMake, libs from the SDK sysroot)"
 (
@@ -46,7 +46,7 @@ cp -r "$WORK/hello-cmake/aember-out/hello-cmake" "$WORK/out/"
 echo "e2e: 3/4 install into $OVERLAY, aember app pack"
 for name in hello-docker hello-cmake; do
   m="$HELPER/examples/$name/aember-container.json"
-  "$HELPER/aember-pack" install -m "$m" -o "$WORK/out" "$AEMBER"
+  "$HELPER/aember-cli/run.py" install -m "$m" -o "$WORK/out" "$AEMBER"
 done
 (cd "$AEMBER" && aember app pack >/dev/null)
 

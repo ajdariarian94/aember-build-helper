@@ -1,10 +1,10 @@
 """
-aember-pack: pack your project into an aember-ready LXC container.
+aember (aember-build-helper): pack your project into an aember-ready LXC container.
 
-    aember-pack init                 write an example aember-container.json
-    aember-pack check                validate the manifest
-    aember-pack build                build the container into aember-out/<name>/
-    aember-pack install <aember>     add it to an aember board's rootfs overlay
+    aember init                 write an example aember-container.json
+    aember check                validate the manifest
+    aember build                build the container into aember-out/<name>/
+    aember install <aember>     add it to an aember board's rootfs overlay
 
 Python 3.10+ standard library only; needs mksquashfs (squashfs-tools 4.6+),
 plus docker for Docker rootfs sources and readelf for "libs".
@@ -18,12 +18,12 @@ import logging
 import sys
 from pathlib import Path
 
-from . import __version__, aember
+from . import __version__, contract
 from .install import install, overlay_dir
 from .manifest import EXAMPLE, PLATFORMS, Manifest, ManifestError, load
 from .rootfs import build_squashfs
 
-log = logging.getLogger("aember-pack")
+log = logging.getLogger("aember.cli")
 DEFAULT_MANIFEST = "aember-container.json"
 DEFAULT_OUT = "aember-out"
 
@@ -31,7 +31,7 @@ DEFAULT_OUT = "aember-out"
 def build(m: Manifest, out_root: Path) -> Path:
     """Build the bundle out_root/<name>/; returns its directory."""
     bundle = out_root / m.name
-    image_dir = bundle / "overlay" / aember.image_dir(m.name).lstrip("/")
+    image_dir = bundle / "overlay" / contract.image_dir(m.name).lstrip("/")
     log.info("Packing %s for %s (%s rootfs)", m.name, m.arch, m.source)
     config = build_squashfs(m, image_dir / f"{m.name}.squashfs")
 
@@ -44,8 +44,8 @@ def build(m: Manifest, out_root: Path) -> Path:
     if config.workdir and not m.workdir:
         m.workdir = config.workdir
 
-    (image_dir / "lxc.container.conf").write_text(aember.lxc_config(m))
-    entry = aember.containers_entry(m, command)
+    (image_dir / "lxc.container.conf").write_text(contract.lxc_config(m))
+    entry = contract.containers_entry(m, command)
     (bundle / "container.json").write_text(json.dumps(entry, indent=2) + "\n")
     size = (image_dir / f"{m.name}.squashfs").stat().st_size
     log.info("Built %s (%.1f MB): %s", m.name, size / 2**20, bundle)
@@ -53,9 +53,7 @@ def build(m: Manifest, out_root: Path) -> Path:
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(
-        prog="aember-pack", description=__doc__.split("\n\n")[0]
-    )
+    ap = argparse.ArgumentParser(prog="aember", description=__doc__.split("\n\n")[0])
     ap.add_argument("--version", action="version", version=__version__)
     ap.add_argument("-v", "--verbose", action="store_true")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -86,7 +84,7 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
-        format="aember-pack: %(message)s",
+        format="aember: %(message)s",
     )
     try:
         if args.cmd == "init":
@@ -94,7 +92,7 @@ def main(argv: list[str] | None = None) -> int:
                 raise ManifestError(f"{args.manifest} exists already")
             data = {**EXAMPLE, "name": args.name}
             args.manifest.write_text(json.dumps(data, indent=2) + "\n")
-            log.info("Wrote %s: edit it, then run aember-pack build", args.manifest)
+            log.info("Wrote %s: edit it, then run aember build", args.manifest)
             return 0
 
         m = load(args.manifest, args.arch)
@@ -112,7 +110,7 @@ def main(argv: list[str] | None = None) -> int:
         elif args.cmd == "install":
             bundle = args.out / m.name
             if not (bundle / "container.json").exists():
-                raise ManifestError(f"{bundle}: not built yet (aember-pack build)")
+                raise ManifestError(f"{bundle}: not built yet (aember build)")
             overlay = overlay_dir(args.target, m.arch)
             for w in install(bundle, overlay):
                 log.warning("warning: %s", w)

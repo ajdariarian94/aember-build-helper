@@ -6,8 +6,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from aember_build_helper.manifest import parse
-from aember_build_helper.rootfs import (
+from aember.manifest import parse
+from aember.rootfs import (
     _norm,
     build_squashfs,
     list_squashfs,

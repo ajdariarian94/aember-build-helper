@@ -203,9 +203,7 @@ def load(path: Path, arch: str | None = None) -> Manifest:
     try:
         data = json.loads(path.read_text())
     except FileNotFoundError:
-        raise ManifestError(
-            f"{path}: not found (aember-pack init writes one)"
-        ) from None
+        raise ManifestError(f"{path}: not found (aember init writes one)") from None
     except json.JSONDecodeError as e:
         raise ManifestError(f"{path}: invalid JSON: {e}") from None
     return parse(data, path.resolve().parent, arch)

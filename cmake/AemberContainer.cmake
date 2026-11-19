@@ -9,7 +9,7 @@
 #
 # Adds the target `<name>-aember-container`: installs the project into a
 # staging directory (cmake --install, prefix "/"-relative: give install()
-# destinations like usr/bin), then runs `aember-pack build --rootfs-dir` on
+# destinations like usr/bin), then runs `aember-cli/run.py build --rootfs-dir` on
 # it, so the manifest's "libs" (e.g. the aember SDK sysroot) adds the shared
 # libraries the binaries need. Output: ${CMAKE_BINARY_DIR}/aember-out/<name>/.
 #
@@ -44,11 +44,11 @@ function(aember_container name)
     COMMAND ${CMAKE_COMMAND} -E rm -rf "${staging}"
     COMMAND ${CMAKE_COMMAND} --install "${CMAKE_BINARY_DIR}" --prefix "${staging}"
     COMMAND
-      ${Python3_EXECUTABLE} "${_AEMBER_BUILD_HELPER_DIR}/aember-pack" build
+      ${Python3_EXECUTABLE} "${_AEMBER_BUILD_HELPER_DIR}/aember-cli/run.py" build
       --manifest "${AC_MANIFEST}" --out "${AC_OUT_DIR}" --rootfs-dir "${staging}"
       ${arch_args}
     DEPENDS ${AC_DEPENDS}
     WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
-    COMMENT "aember-pack: container ${name} → ${AC_OUT_DIR}/${name}"
+    COMMENT "aember: container ${name} → ${AC_OUT_DIR}/${name}"
     VERBATIM)
 endfunction()

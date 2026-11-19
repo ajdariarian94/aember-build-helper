@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from aember_build_helper import libs
+from aember import libs
 
 from .helpers import needs_gcc
 
