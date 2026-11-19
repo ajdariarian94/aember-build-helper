@@ -23,8 +23,8 @@ aember-out/<name>/overlay/var/lib/aember/<name>/lxc.container.conf
 
 and to merge that into an aember board overlay (`aember-cli/run.py install`).
 
-**Not pushed yet:** commit locally only; never push or add a remote unless
-the user asks.
+Repository: <https://github.com/ajdariarian94/aember-build-helper>
+(public). Like the sibling repos: branch off `main` and merge through a PR.
 
 ## Layout
 
@@ -102,4 +102,4 @@ tests/e2e/aember-qemu.sh         both examples into aember, QEMU boot, checks
   type hints, small functions; module docstrings say what and why.
 - Keep README.md (user documentation, manifest reference table) and this
   file current in the same change.
-- Commit only when asked; local commits only.
+- Commit, push and merge only when asked.
