@@ -1,0 +1,35 @@
+# aember-build-helper CI: the unit tests on the Python versions the tool
+# supports (3.10+, standard library only), with squashfs-tools 4.6+ and gcc
+# so the SquashFS and library-resolution tests run instead of skipping.
+# The end-to-end test (tests/e2e/aember-qemu.sh) needs aember's dev
+# container and QEMU; it runs there, not here.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    name: Unit tests (Python ${{ matrix.python }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        python: ["3.10", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: ${{ matrix.python }}
+      - name: squashfs-tools (4.6 on Ubuntu 24.04)
+        run: sudo apt-get update && sudo apt-get install -y squashfs-tools
+      - name: Tests
+        run: python -m unittest discover -s aember-cli/tests -t aember-cli -v
+      - name: The CLI runs
+        run: aember-cli/run.py --help

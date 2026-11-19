@@ -154,7 +154,8 @@ python3 -m unittest discover -s aember-cli/tests -t aember-cli   # unit tests (s
 tests/e2e/aember-qemu.sh /aember_ws/aember     # in the aember dev container
 ```
 
-The end-to-end test packs both examples, installs them into an aember
+GitHub Actions runs the unit tests on every push and pull request (Python
+3.10, 3.12, 3.13). The end-to-end test packs both examples, installs them into an aember
 checkout's x64 overlay, packs aember and boots it in QEMU: both containers
 must run, print into their console logs (read through aember's debug shell),
 and the Docker one must see aember's network. The overlay is restored

@@ -96,6 +96,10 @@ tests/e2e/aember-qemu.sh         both examples into aember, QEMU boot, checks
   on the console, a command, `exit`), because aember's console log is muted
   while the shell is open.
 
+- CI (`.github/workflows/ci.yml`): the unit tests on Python 3.10, 3.12 and
+  3.13 with squashfs-tools 4.6 on every push and pull request; keep 3.10
+  working (no newer syntax or stdlib APIs).
+
 ## Conventions
 
 - black formatting, 88 columns, `from __future__ import annotations`,
