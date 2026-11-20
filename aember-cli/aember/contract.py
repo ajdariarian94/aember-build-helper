@@ -19,6 +19,21 @@ from .manifest import Bridge, Manifest
 AEMBER_LIB = "/var/lib/aember"
 
 
+# cgroup2 device rules for null, zero, full, random, urandom, tty, console,
+# ptmx and the pts: added whenever a manifest has `device_allow`.
+BASE_DEVICE_ALLOW = (
+    "c 1:3 rwm",
+    "c 1:5 rwm",
+    "c 1:7 rwm",
+    "c 1:8 rwm",
+    "c 1:9 rwm",
+    "c 5:0 rwm",
+    "c 5:1 rwm",
+    "c 5:2 rwm",
+    "c 136:* rwm",
+)
+
+
 def image_dir(name: str) -> str:
     return f"{AEMBER_LIB}/{name}"
 
@@ -95,6 +110,11 @@ def lxc_config(m: Manifest) -> str:
     if m.devices or m.device_allow:
         lines.append("")
         lines.append("# Devices (optional binds: the container starts without them)")
+        if m.device_allow:
+            # One allow rule turns cgroup2's device filter into an allow-list:
+            # without these the init can't even open /dev/null and exits 1.
+            lines.append("# The basics every container needs, then the manifest's")
+            lines += [f"lxc.cgroup2.devices.allow = {r}" for r in BASE_DEVICE_ALLOW]
         for rule in m.device_allow:
             lines.append(f"lxc.cgroup2.devices.allow = {rule}")
         for dev in m.devices:
