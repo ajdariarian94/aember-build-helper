@@ -51,6 +51,17 @@ class ManifestTest(unittest.TestCase):
         )
         self.assertEqual(m.platform, "linux/arm/v7")
 
+    def test_riscv64_and_musl_variants(self):
+        # musl variants run the same instruction set as their glibc arch
+        self.assertEqual(ok(arch="riscv64-poky-linux").platform, "linux/riscv64")
+        for arch, platform in [
+            ("x64-poky-linux-musl", "linux/amd64"),
+            ("aarch64-poky-linux-musl", "linux/arm64"),
+            ("arm-poky-linux-musl", "linux/arm/v7"),
+            ("riscv64-poky-linux-musl", "linux/riscv64"),
+        ]:
+            self.assertEqual(ok(arch=arch).platform, platform)
+
     def test_bridge_network(self):
         m = ok(
             network={
