@@ -12,11 +12,17 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
-# aember architecture → Docker platform.
-PLATFORMS = {
+# aember architecture → Docker platform. The musl variants (aember-resources
+# v0.1.9+) run the same instruction sets: a Docker image brings its own libc.
+_GLIBC_PLATFORMS = {
     "x64-poky-linux": "linux/amd64",
     "aarch64-poky-linux": "linux/arm64",
     "arm-poky-linux": "linux/arm/v7",
+    "riscv64-poky-linux": "linux/riscv64",
+}
+PLATFORMS = {
+    **_GLIBC_PLATFORMS,
+    **{f"{arch}-musl": platform for arch, platform in _GLIBC_PLATFORMS.items()},
 }
 NAME = re.compile(r"^[a-z0-9][a-z0-9-]{0,62}$")
 RESTART_POLICIES = ("no", "on-failure", "always")

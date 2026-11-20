@@ -100,8 +100,9 @@ project into `build/aember-staging/<name>/` and packs it into
 `build/aember-out/<name>/` (`aember_container()` passes `--rootfs-dir`, so
 the manifest's `"dir"` is only a default). Options: `OUT_DIR`, `ARCH`, `ALL`.
 See `examples/hello-cmake/`. The target sysroots are `core2-64-poky-linux`
-(x64), `cortexa72-poky-linux` (aarch64) and
-`armv7at2hf-neon-poky-linux-gnueabi` (arm32).
+(x64), `cortexa53-poky-linux` (aarch64), `armv7at2hf-neon-poky-linux-gnueabi`
+(arm32) and `riscv64imafdc-poky-linux` (riscv64); the musl variants add
+`-musl` (`armv7at2hf-neon-poky-linux-musleabi` on arm32).
 
 ## The manifest (`aember-container.json`)
 
@@ -110,7 +111,7 @@ Paths are relative to the manifest's directory.
 | Key | Default | Meaning |
 |-----|---------|---------|
 | `name` | required | lowercase letters, digits, `-`: directory, LXC name, hostname |
-| `arch` | `x64-poky-linux` | `x64-poky-linux`, `aarch64-poky-linux`, `arm-poky-linux` (`--arch` overrides) |
+| `arch` | `x64-poky-linux` | `x64-poky-linux`, `aarch64-poky-linux`, `arm-poky-linux`, `riscv64-poky-linux`, or one of their `-musl` variants (`--arch` overrides) |
 | `rootfs` | required | exactly one of `dockerfile` (+ `context`), `docker_image`, `dir` |
 | `files` | `[]` | `{"src", "dst", "mode"}` copied over the rootfs (replace files of the same path) |
 | `libs` | none | `{"sysroot": ...}`: add the libraries the ELF files in `files` and `dir` need |
