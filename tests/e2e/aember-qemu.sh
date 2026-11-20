@@ -68,8 +68,8 @@ check() {
 }
 check "Container 'hello-docker' started successfully" "hello-docker started"
 check "Container 'hello-cmake' started successfully" "hello-cmake started"
-check "hello-docker \[running\] (container)" "hello-docker running (heartbeat)"
-check "hello-cmake \[running\] (container)" "hello-cmake running (heartbeat)"
+check "Container 'hello-docker': starting -> running" "hello-docker running (containerd)"
+check "Container 'hello-cmake': starting -> running" "hello-cmake running (containerd)"
 check "hello-docker: hello from a Dockerfile" "hello-docker's output (console log)"
 check "hello-docker: up on x86_64, net: .*eth0" "hello-docker sees aember's network (host)"
 check "hello-cmake: hello #[0-9]* from CMake" "hello-cmake's output (C++23, SDK libraries)"

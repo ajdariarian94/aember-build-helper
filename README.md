@@ -119,7 +119,7 @@ Paths are relative to the manifest's directory.
 | `env`, `workdir` | `{}`, none | environment and working directory of the app |
 | `network` | `host` | `host` (aember's network), `isolated` (loopback only), or `{"bridge": "lxcbr0", "address": "10.0.3.20/24", "gateway": "10.0.3.1"}` |
 | `devices` | `[]` | device nodes bound in if present, e.g. `/dev/fb0`, `/dev/dri` |
-| `device_allow` | `[]` | `lxc.cgroup2.devices.allow` rules, e.g. `c 29:0 rwm` |
+| `device_allow` | `[]` | `lxc.cgroup2.devices.allow` rules, e.g. `c 29:0 rwm`. Any rule makes the device filter an allow-list, so the basics (`/dev/null`, zero, random, tty, console, pts) are added too. Not needed for a privileged aember container: `devices` alone binds the node |
 | `lxc` | `[]` | extra raw `lxc.*` lines |
 | `restart_policy` | `always` | `no`, `on-failure`, `always` |
 | `max_restart_attempts`, `restart_delay` | `5`, `5` | restarts in a row (0 = no limit), seconds between them |
