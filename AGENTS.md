@@ -39,6 +39,11 @@ aember-cli/                      the `aember` CLI (same place and name as in the
   aember/libs.py                 NEEDED + interpreter resolution from a sysroot (readelf)
   aember/install.py              copy into an overlay, merge containers.json
   tests/test_*.py                unittest (stdlib); squashfs/gcc tests skip without the tools
+project-cli/aember_project/       shared CLI of the C++ container repos (aember-stats, -monitor,
+                                 -auth, fleet's agent): sdk, build, pack, install, test, all
+  project.py                     Project(name, resources_version, tests, root) from their run.py
+  sdk.py / build.py / cli.py     SDK download + paths, cmake in the SDK, tests, pack via aember-cli
+project-cli/tests/               unittest of the shared CLI (no SDK needed)
 cmake/AemberContainer.cmake      aember_container(): cmake --install to staging + run.py build
 examples/hello-docker/           Dockerfile source (Alpine + a shell script)
 examples/hello-cmake/            C++23 + aember SDK + libs from the sysroot
@@ -76,6 +81,11 @@ tests/e2e/aember-qemu.sh         both examples into aember, QEMU boot, checks
   package is `aember` too, so never `pip install` it into aember's dev
   container venv (aember's own CLI is the `aember` package there); always
   run it through `run.py`. Loggers: `aember.<module>`.
+- `project-cli/` is a **separate package** (`aember_project`) so it never
+  collides with `aember-cli/`'s `aember` package; it packs by running
+  `aember-cli/run.py` as a subprocess. The container repos import it from
+  their `tools/aember-build-helper` submodule: a change to `Project` or
+  `main` is an interface change for all of them (bump their submodules).
 - Errors are `ManifestError` / `RuntimeError` with a message for the user;
   `cli.main` turns them into exit status 1. No tracebacks for user mistakes.
 - Docker: always `--platform` from `PLATFORMS`; `docker create` gets a
@@ -83,8 +93,8 @@ tests/e2e/aember-qemu.sh         both examples into aember, QEMU boot, checks
 
 ## Tests
 
-- `python3 -m unittest discover -s aember-cli/tests -t aember-cli` (host or
-  dev container). Add a test for every change; tests needing `mksquashfs`
+- `python3 -m unittest discover -s aember-cli/tests -t aember-cli` and the
+  same for `project-cli` (host or dev container). Add a test for every change; tests needing `mksquashfs`
   4.6+ or gcc use the skip decorators in `aember-cli/tests/helpers.py`.
 - Before calling a change to the image layout, lxc config or containers.json
   entry done, run `tests/e2e/aember-qemu.sh /aember_ws/aember` in the aember
