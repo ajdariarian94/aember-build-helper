@@ -30,6 +30,8 @@ jobs:
       - name: squashfs-tools (4.6 on Ubuntu 24.04)
         run: sudo apt-get update && sudo apt-get install -y squashfs-tools
       - name: Tests
-        run: python -m unittest discover -s aember-cli/tests -t aember-cli -v
+        run: |
+          python -m unittest discover -s aember-cli/tests -t aember-cli -v
+          python -m unittest discover -s project-cli/tests -t project-cli -v
       - name: The CLI runs
         run: aember-cli/run.py --help

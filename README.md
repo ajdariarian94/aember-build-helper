@@ -104,6 +104,49 @@ See `examples/hello-cmake/`. The target sysroots are `core2-64-poky-linux`
 (arm32) and `riscv64imafdc-poky-linux` (riscv64); the musl variants add
 `-musl` (`armv7at2hf-neon-poky-linux-musleabi` on arm32).
 
+## A whole C++ repository: the shared project CLI
+
+aember's own container repositories (aember-stats, aember-monitor,
+aember-auth, aember-fleet's agent) share one `aember` CLI that does the SDK
+download, the cross build, the unit tests and the packing. It lives here in
+`project-cli/` (package `aember_project`), so a repository only keeps a
+launcher, `aember-cli/run.py`, that names itself:
+
+```python
+#!/usr/bin/env python3
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools" / "aember-build-helper" / "project-cli"))
+from aember_project import Project, main  # noqa: E402
+
+NAME = "my-app"              # = aember-container.json's "name"
+RESOURCES_VERSION = "0.1.15" # aember-resources release with the SDKs
+TESTS = "host"               # or "sdk": tests that need the SDK's libraries
+
+if __name__ == "__main__":
+    sys.exit(main(Project(NAME, RESOURCES_VERSION, tests=TESTS, root=ROOT)))
+```
+
+The repository's CMake project installs into a prefix (`cmake --install`)
+and takes `-DBUILD_TESTS=ON` for unit tests named `*-unittest`.
+
+```bash
+aember-cli/run.py sdk -a aarch64-poky-linux     # SDK into build/aember-resources/ (or $AEMBER_RESOURCES_DIR)
+aember-cli/run.py build -a aarch64-poky-linux   # cross build → build/stage/<arch>/
+aember-cli/run.py pack -a aarch64-poky-linux    # → build/aember-out/<arch>/<name>/
+aember-cli/run.py install -a aarch64-poky-linux ../aember
+aember-cli/run.py all -a aarch64-poky-linux     # sdk + build + pack
+aember-cli/run.py test [--sanitize]             # unit tests: host compiler, or the x64 SDK
+```
+
+`pack` fills in the manifest per architecture (`"arch"`, `"rootfs"` = the
+stage, `"libs"` = the SDK's sysroot; `"{sysroot}/..."` in a `"files"` source
+is a file from that sysroot, `"optional": true` skips it when missing) and
+calls this repo's `aember build`. `AEMBER_BUILD_JOBS` caps the parallel
+jobs (default: 2/3 of the CPUs).
+
 ## The manifest (`aember-container.json`)
 
 Paths are relative to the manifest's directory.
@@ -151,7 +194,8 @@ graceful stop. The image gets the mount points aember needs (`/proc`, `/sys`,
 ## Tests
 
 ```bash
-python3 -m unittest discover -s aember-cli/tests -t aember-cli   # unit tests (some need mksquashfs, gcc)
+python3 -m unittest discover -s aember-cli/tests -t aember-cli    # unit tests (some need mksquashfs, gcc)
+python3 -m unittest discover -s project-cli/tests -t project-cli  # the shared project CLI
 tests/e2e/aember-qemu.sh /aember_ws/aember     # in the aember dev container
 ```
 
