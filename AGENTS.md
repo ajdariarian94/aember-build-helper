@@ -96,6 +96,9 @@ tests/e2e/aember-qemu.sh         both examples into aember, QEMU boot, checks
 - `python3 -m unittest discover -s aember-cli/tests -t aember-cli` and the
   same for `project-cli` (host or dev container). Add a test for every change; tests needing `mksquashfs`
   4.6+ or gcc use the skip decorators in `aember-cli/tests/helpers.py`.
+- A test that pins down a fixed bug starts with a comment
+  `Regression: <the bug>` (`grep -rn "Regression:"` lists them). Every bug
+  fix gets one.
 - Before calling a change to the image layout, lxc config or containers.json
   entry done, run `tests/e2e/aember-qemu.sh /aember_ws/aember` in the aember
   dev container (docker CLI, SDK, QEMU). It modifies aember's x64 overlay

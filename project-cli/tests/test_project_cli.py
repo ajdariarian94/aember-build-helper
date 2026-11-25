@@ -101,7 +101,9 @@ class ManifestTest(unittest.TestCase):
             self.assertEqual(
                 m["rootfs"]["dir"], str(p.root / "build/stage/aarch64-poky-linux-musl")
             )
-            self.assertEqual(m["files"][0]["src"], str(p.root.resolve() / "conf/a.json"))
+            self.assertEqual(
+                m["files"][0]["src"], str(p.root.resolve() / "conf/a.json")
+            )
 
     def test_sysroot_files_and_optional_ones(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -113,7 +115,9 @@ class ManifestTest(unittest.TestCase):
                 ],
             )
             with mock.patch.dict(os.environ, {"AEMBER_RESOURCES_DIR": "/res"}):
-                m = json.loads(build.container_manifest(p, "x64-poky-linux").read_text())
+                m = json.loads(
+                    build.container_manifest(p, "x64-poky-linux").read_text()
+                )
         self.assertEqual(
             m["files"],
             [

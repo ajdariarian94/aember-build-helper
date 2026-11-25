@@ -61,8 +61,9 @@ class LxcConfigTest(unittest.TestCase):
         )
         self.assertEqual(c["lxc.environment"], ["A=1", "B=2"])
         self.assertEqual(c["lxc.init.cwd"], ["/srv"])
-        # Any allow rule makes an allow-list: the basics come first, or the
-        # init can't open /dev/null (found with aember-monitor's fb0 rule).
+        # Regression: any allow rule makes an allow-list; with only fb0's rule
+        # the init couldn't open /dev/null and exited 1 (aember-monitor). The
+        # basics come first.
         self.assertEqual(
             c["lxc.cgroup2.devices.allow"],
             [*contract.BASE_DEVICE_ALLOW, "c 29:0 rwm"],
