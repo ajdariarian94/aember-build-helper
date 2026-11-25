@@ -40,9 +40,11 @@ aember-cli/                      the `aember` CLI (same place and name as in the
   aember/install.py              copy into an overlay, merge containers.json
   tests/test_*.py                unittest (stdlib); squashfs/gcc tests skip without the tools
 project-cli/aember_project/       shared CLI of the C++ container repos (aember-stats, -monitor,
-                                 -auth, fleet's agent): sdk, build, pack, install, test, all
+                                 -auth, fleet's agent): sdk, build, pack, install, test, mutate, all
   project.py                     Project(name, resources_version, tests, root) from their run.py
   sdk.py / build.py / cli.py     SDK download + paths, cmake in the SDK, tests, pack via aember-cli
+  mutate.py                      mutation testing (aember's mutator, kept in step with
+                                 aember-cli/aember/steps/testing/mutate.py in aember)
 project-cli/tests/               unittest of the shared CLI (no SDK needed)
 cmake/AemberContainer.cmake      aember_container(): cmake --install to staging + run.py build
 examples/hello-docker/           Dockerfile source (Alpine + a shell script)

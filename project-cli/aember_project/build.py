@@ -106,10 +106,14 @@ SANITIZER_ENV = {
 }
 
 
+def host_test_dir(root: Path, sanitize: bool = False) -> Path:
+    return build_dir(root, "host", "Debug-asan" if sanitize else "Debug")
+
+
 def host_tests(root: Path, sanitize: bool = False) -> None:
     """Build the unit tests with the host compiler and run them with ctest
     (@p sanitize: ASan + UBSan)."""
-    bdir = build_dir(root, "host", "Debug-asan" if sanitize else "Debug")
+    bdir = host_test_dir(root, sanitize)
     flags = {"CXXFLAGS": SANITIZE_FLAGS, "LDFLAGS": SANITIZE_FLAGS} if sanitize else {}
     run(configure(root, bdir, "Debug", tests=True), root, {**os.environ, **flags})
     run(["cmake", "--build", str(bdir), "--parallel", str(jobs())], root)
@@ -125,22 +129,15 @@ TEST_ARCH = "x64-poky-linux"
 TEST_LOADER = "ld-linux-x86-64.so.2"
 
 
-def sdk_tests(root: Path, sanitize: bool = False) -> None:
-    """Build the unit tests with the x64 SDK and run each `*-unittest`
-    through the SDK's loader, with the sysroot's libraries and Qt plugins
-    (offscreen). @p sanitize: ASan + UBSan (the SDK's gcc-sanitizers)."""
-    bdir = build_dir(root, TEST_ARCH, "Debug-tests-asan" if sanitize else "Debug-tests")
-    # The SDK's environment-setup sets CXXFLAGS/LDFLAGS: append to them.
-    san = [
-        f'export CXXFLAGS="$CXXFLAGS {SANITIZE_FLAGS}" '
-        f'LDFLAGS="$LDFLAGS {SANITIZE_FLAGS}"'
-    ]
-    run_in_sdk(
-        root,
-        TEST_ARCH,
-        (san if sanitize else [])
-        + [in_sdk(configure(root, bdir, "Debug", tests=True)), build_cmd(bdir)],
-    )
+def sdk_test_dir(root: Path, sanitize: bool = False) -> Path:
+    return build_dir(root, TEST_ARCH, "Debug-tests-asan" if sanitize else "Debug-tests")
+
+
+def sdk_test_commands(
+    root: Path, bdir: Path, sanitize: bool = False
+) -> tuple[list[list[str]], dict[str, str]]:
+    """Each `*-unittest` in @p bdir as a command through the SDK's loader,
+    and the environment they run in (the sysroot's Qt plugins, offscreen)."""
     sysroot = sdk.sysroot(root, TEST_ARCH)
     libs = ":".join(str(sysroot / d) for d in ("lib", "usr/lib"))
     env = {
@@ -154,9 +151,29 @@ def sdk_tests(root: Path, sanitize: bool = False) -> None:
     if not tests:
         raise FileNotFoundError(f"No test binaries in {bdir}")
     loader = str(sysroot / "lib" / TEST_LOADER)
-    for test in tests:
-        log.info("Running %s", test.name)
-        run([loader, "--library-path", libs, str(test)], root, env)
+    return [[loader, "--library-path", libs, str(t)] for t in tests], env
+
+
+def sdk_tests(root: Path, sanitize: bool = False) -> None:
+    """Build the unit tests with the x64 SDK and run each `*-unittest`
+    through the SDK's loader, with the sysroot's libraries and Qt plugins
+    (offscreen). @p sanitize: ASan + UBSan (the SDK's gcc-sanitizers)."""
+    bdir = sdk_test_dir(root, sanitize)
+    # The SDK's environment-setup sets CXXFLAGS/LDFLAGS: append to them.
+    san = [
+        f'export CXXFLAGS="$CXXFLAGS {SANITIZE_FLAGS}" '
+        f'LDFLAGS="$LDFLAGS {SANITIZE_FLAGS}"'
+    ]
+    run_in_sdk(
+        root,
+        TEST_ARCH,
+        (san if sanitize else [])
+        + [in_sdk(configure(root, bdir, "Debug", tests=True)), build_cmd(bdir)],
+    )
+    commands, env = sdk_test_commands(root, bdir, sanitize)
+    for cmd in commands:
+        log.info("Running %s", Path(cmd[-1]).name)
+        run(cmd, root, env)
 
 
 def container_manifest(project: Project, arch: str) -> Path:

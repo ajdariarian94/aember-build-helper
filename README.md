@@ -139,7 +139,16 @@ aember-cli/run.py pack -a aarch64-poky-linux    # → build/aember-out/<arch>/<n
 aember-cli/run.py install -a aarch64-poky-linux ../aember
 aember-cli/run.py all -a aarch64-poky-linux     # sdk + build + pack
 aember-cli/run.py test [--sanitize]             # unit tests: host compiler, or the x64 SDK
+aember-cli/run.py mutate [-n N] [-f FILE]       # mutation testing of those tests
 ```
+
+`mutate` turns one operator at a time in `src/**/*.cpp` (not `main.cpp`)
+into its opposite (`==`/`!=`, `<`/`>=`, `&&`/`||`, `true`/`false`, `+ 1`/`- 1`,
+a dropped `!`), rebuilds and runs the unit tests. A mutant every test
+survives is a line no test checks: write a test, or judge it equivalent
+(same behaviour another way). Report: `build/mutation/<name>.json` and
+`.md`. It's the same mutator as aember's `aember mutate`; each test run
+gets its own session (a mutant can make a test kill its process group).
 
 `pack` fills in the manifest per architecture (`"arch"`, `"rootfs"` = the
 stage, `"libs"` = the SDK's sysroot; `"{sysroot}/..."` in a `"files"` source

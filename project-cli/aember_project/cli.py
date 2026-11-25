@@ -6,6 +6,7 @@ aember-cli/run.py calls `main` with the repository's `Project`).
     aember pack -a <arch>       pack the staged install as an aember container
     aember install -a <arch> <aember checkout>
     aember test                 the C++ unit tests (host compiler or x64 SDK)
+    aember mutate [-n N]        mutation testing of those unit tests
     aember all -a <arch>        sdk + build + pack
 """
 
@@ -16,7 +17,7 @@ import logging
 import subprocess
 from pathlib import Path
 
-from aember_project import build, sdk
+from aember_project import build, mutate, sdk
 from aember_project.project import Project
 
 log = logging.getLogger("aember")
@@ -47,6 +48,13 @@ def main(project: Project, argv: list[str] | None = None) -> int:
     p.add_argument(
         "--sanitize", action="store_true", help="C++ tests with ASan + UBSan"
     )
+    p = sub.add_parser("mutate", help="mutation testing of the unit tests")
+    p.add_argument("-n", "--max", type=int, default=0, help="a sample (0: all)")
+    p.add_argument("--seed", type=int, default=1, help="same seed, same sample")
+    p.add_argument("--timeout", type=float, default=120, help="seconds per suite")
+    p.add_argument(
+        "-f", "--file", action="append", help="only sources whose path has this"
+    )
 
     args = ap.parse_args(argv)
     logging.basicConfig(
@@ -69,6 +77,8 @@ def main(project: Project, argv: list[str] | None = None) -> int:
         elif args.command == "test":
             tests = build.sdk_tests if project.tests == "sdk" else build.host_tests
             tests(project.root, sanitize=args.sanitize)
+        elif args.command == "mutate":
+            mutate.mutate(project, args.max, args.seed, args.timeout, args.file)
     except (FileNotFoundError, ValueError) as e:
         log.error("%s", e)
         return 1
