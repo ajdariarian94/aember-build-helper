@@ -23,7 +23,8 @@ cp "$OVERLAY/etc/aember/containers.json" "$WORK/containers.json.orig"
 restore() {
   echo "e2e: restoring the aember overlay"
   cp "$WORK/containers.json.orig" "$OVERLAY/etc/aember/containers.json"
-  rm -rf "$OVERLAY/var/lib/aember/hello-docker" "$OVERLAY/var/lib/aember/hello-cmake"
+  rm -f "$OVERLAY/var/lib/aember/packages/hello-docker.aember" \
+    "$OVERLAY/var/lib/aember/packages/hello-cmake.aember"
   (cd "$AEMBER" && aember app pack >/dev/null 2>&1) || echo "e2e: re-pack failed" >&2
 }
 trap restore EXIT

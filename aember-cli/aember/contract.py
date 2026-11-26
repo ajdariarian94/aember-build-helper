@@ -1,15 +1,16 @@
 """
-What aember expects of a container (aember's services/containerd):
+What aember expects of a container (aember's services/containerd and
+doc/aember-format.md):
 
-    /var/lib/aember/<name>/<name>.squashfs     the read-only root file system
-    /var/lib/aember/<name>/lxc.container.conf  its LXC configuration
-    /etc/aember/containers.json                one entry per container
+    <name>.aember                    the package: config.json (how to start
+                                     it), lxc.container.conf, image.squashfs
+    /etc/aember/containers.json      {"name": ..., "dependencies": [...]}
 
-aember-containerd mounts the SquashFS (lower) with a tmpfs-backed overlay
-at /var/lib/aember/containers/<name>, binds the host's /var/log at
-/host-logs and its static BusyBox as /busybox.aember-init (the init
-wrapper that passes SIGTERM on), then starts the container with LXC and
-runs "args" in it.
+aember-containerd installs the package into /var/lib/aember/<name>/, mounts
+the SquashFS (lower) with a tmpfs-backed overlay at
+/var/lib/aember/containers/<name>, binds the host's /var/log at /host-logs
+and its static BusyBox as /busybox.aember-init (the init wrapper that passes
+SIGTERM on), then starts the container with LXC and runs "command" in it.
 """
 
 from __future__ import annotations
@@ -34,16 +35,8 @@ BASE_DEVICE_ALLOW = (
 )
 
 
-def image_dir(name: str) -> str:
-    return f"{AEMBER_LIB}/{name}"
-
-
-def squashfs_path(name: str) -> str:
-    return f"{image_dir(name)}/{name}.squashfs"
-
-
-def config_path(name: str) -> str:
-    return f"{image_dir(name)}/lxc.container.conf"
+def package_name(name: str) -> str:
+    return f"{name}.aember"
 
 
 def console_log_path(name: str) -> str:
@@ -134,21 +127,23 @@ def lxc_config(m: Manifest) -> str:
     return "\n".join(lines) + "\n"
 
 
-def containers_entry(m: Manifest, command: list[str]) -> dict:
-    """The entry for /etc/aember/containers.json."""
+def config_json(m: Manifest, command: list[str]) -> dict:
+    """The package's config.json: how containerd starts the container."""
     return {
         "name": m.name,
-        "type": "container",
-        "container": {
-            "squashfs": squashfs_path(m.name),
-            "rootfs": rootfs_path(m.name),
-            "config_path": config_path(m.name),
-            "args": command,
-        },
+        "command": command,
         "init": m.init,
         "stop_timeout": m.stop_timeout,
         "restart_policy": m.restart_policy,
-        "dependencies": m.dependencies,
         "max_restart_attempts": m.max_restart_attempts,
         "restart_delay": m.restart_delay,
     }
+
+
+def containers_entry(m: Manifest) -> dict:
+    """The entry for /etc/aember/containers.json: the name, and what must
+    run before it."""
+    entry: dict = {"name": m.name}
+    if m.dependencies:
+        entry["dependencies"] = m.dependencies
+    return entry

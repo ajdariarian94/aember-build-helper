@@ -83,24 +83,22 @@ class LxcConfigTest(unittest.TestCase):
 
 
 class EntryTest(unittest.TestCase):
-    def test_entry_matches_containers_json(self):
-        e = contract.containers_entry(
-            manifest(restart_policy="on-failure"), ["/app", "-v"]
-        )
-        self.assertEqual(e["name"], "app")
-        self.assertEqual(e["type"], "container")
-        self.assertEqual(
-            e["container"],
-            {
-                "squashfs": "/var/lib/aember/app/app.squashfs",
-                "rootfs": "/var/lib/aember/containers/app",
-                "config_path": "/var/lib/aember/app/lxc.container.conf",
-                "args": ["/app", "-v"],
-            },
-        )
-        self.assertEqual(e["restart_policy"], "on-failure")
+    def test_config_json_is_how_containerd_starts_it(self):
+        c = contract.config_json(manifest(restart_policy="on-failure"), ["/app", "-v"])
+        self.assertEqual(c["name"], "app")
+        self.assertEqual(c["command"], ["/app", "-v"])
+        self.assertEqual(c["restart_policy"], "on-failure")
         for key in ("init", "stop_timeout", "max_restart_attempts", "restart_delay"):
-            self.assertIn(key, e)
+            self.assertIn(key, c)
+        self.assertNotIn("dependencies", c)  # the board's containers.json
+
+    def test_entry_is_the_name_and_what_it_needs(self):
+        self.assertEqual(contract.containers_entry(manifest()), {"name": "app"})
+        self.assertEqual(
+            contract.containers_entry(manifest(dependencies=["db"])),
+            {"name": "app", "dependencies": ["db"]},
+        )
+        self.assertEqual(contract.package_name("app"), "app.aember")
 
 
 if __name__ == "__main__":

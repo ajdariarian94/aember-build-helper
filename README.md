@@ -7,14 +7,29 @@ device runs:
 
 ```
 aember-out/<name>/
-  container.json                                  the entry for /etc/aember/containers.json
-  overlay/var/lib/aember/<name>/<name>.squashfs   the read-only root file system
-  overlay/var/lib/aember/<name>/lxc.container.conf
+  <name>.aember        the package: image.squashfs, config.json (how to start it),
+                       lxc.container.conf; xz-compressed, signed with --key
+  container.json       the entry for /etc/aember/containers.json (name, dependencies)
+  config.json, lxc.container.conf   copies, to read
 ```
 
-`aember-cli/run.py install <aember checkout>` puts it into a board's rootfs overlay
-(`resources/<arch>/rootfs`), and the next `aember app pack` / `aember rpi image`
-/ `aember usb image` ships it.
+The `.aember` format is aember's
+[doc/aember-format.md](https://github.com/ajdariarian94/aember/blob/main/doc/aember-format.md).
+`aember-cli/run.py install <aember checkout>` puts the package into a board's
+rootfs overlay (`resources/<arch>/rootfs/var/lib/aember/packages/`) and its
+name into `containers.json`; the next `aember app pack` / `aember rpi image` /
+`aember usb image` ships it installed. A device installs a package dropped
+into `/var/lib/aember/packages/` at the next start of aember-containerd.
+
+**Signing.** `aember build --key <name>.key` (or `AEMBER_PACKAGE_KEY`) signs
+the package with Ed25519; the board needs the matching `<name>.pub` in
+`etc/aember/keys/`. Make a pair with aember's `aember package keygen <name>`.
+Without a key the package is unsigned: only boards whose `containers.json`
+says `"allow_unsigned": true` (development boards) take it.
+
+**Images** are SquashFS with 1 MiB blocks and xz with a block-sized
+dictionary, plus xz's x86 filter on x86-64: about 11 % smaller than
+mksquashfs' defaults for aember-monitor.
 
 Python 3.10+ standard library only: nothing to install besides the tools a
 source needs.

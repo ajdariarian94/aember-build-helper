@@ -93,5 +93,21 @@ class StreamTest(unittest.TestCase):
             self.assertIn("override", (dest / "usr/bin/app").read_text())
 
 
+class SquashfsOptionsTest(unittest.TestCase):
+    def test_big_blocks_and_the_x86_filter_only_on_x86(self):
+        from aember.manifest import parse
+        from aember.rootfs import squashfs_options
+
+        def opts(**kw):
+            data = {"name": "a", "rootfs": {"dir": "s"}, "command": ["/a"], **kw}
+            return squashfs_options(parse(data, Path("/p")))
+
+        self.assertEqual(opts(), ["-b", "1M", "-Xdict-size", "100%", "-Xbcj", "x86"])
+        self.assertEqual(
+            opts(arch="aarch64-poky-linux"), ["-b", "1M", "-Xdict-size", "100%"]
+        )
+        self.assertEqual(opts(compression="zstd"), ["-b", "1M"])
+
+
 if __name__ == "__main__":
     unittest.main()

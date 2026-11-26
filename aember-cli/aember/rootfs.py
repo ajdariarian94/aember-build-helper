@@ -270,6 +270,21 @@ def mksquashfs() -> str:
     return tool
 
 
+def squashfs_options(m: Manifest) -> list[str]:
+    """The smallest images that still read fast: 1 MiB blocks (128 KiB is
+    mksquashfs' default) with xz's dictionary as large as a block, and for
+    x86-64 xz's x86 filter for machine code (aember-monitor: 9.92 -> 8.79
+    MB; see aember's doc/aember-format.md). The filter only for x86, where
+    aember's kernel is tested with it; mksquashfs has none for arm64 or
+    riscv64."""
+    options = ["-b", "1M"]
+    if m.compression == "xz":
+        options += ["-Xdict-size", "100%"]
+        if m.arch.startswith("x64-"):
+            options += ["-Xbcj", "x86"]
+    return options
+
+
 def build_squashfs(m: Manifest, out: Path) -> ImageConfig:
     """Pack the root file system into @p out; returns the image's config."""
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -282,6 +297,7 @@ def build_squashfs(m: Manifest, out: Path) -> ImageConfig:
             "-tar",
             "-comp",
             m.compression,
+            *squashfs_options(m),
             "-noappend",
             "-no-progress",
             "-quiet",
