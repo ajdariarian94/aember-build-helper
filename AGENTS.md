@@ -16,12 +16,18 @@ BusyBox, LXC, SDK).
 The helper's whole job is to produce, for a container `<name>`:
 
 ```
-aember-out/<name>/container.json                                 → containers.json entry
-aember-out/<name>/overlay/var/lib/aember/<name>/<name>.squashfs  → read-only rootfs
-aember-out/<name>/overlay/var/lib/aember/<name>/lxc.container.conf
+aember-out/<name>/<name>.aember     → the package (aember's doc/aember-format.md):
+                                      image.squashfs + config.json + lxc.container.conf,
+                                      one xz stream of a tar + a signed footer
+aember-out/<name>/container.json    → containers.json entry {"name", "dependencies"}
+aember-out/<name>/config.json, lxc.container.conf   (copies to read)
 ```
 
-and to merge that into an aember board overlay (`aember-cli/run.py install`).
+and to put that into an aember board overlay (`aember-cli/run.py install`:
+the package into `var/lib/aember/packages/`, the entry into
+`etc/aember/containers.json`). `aember/aember_package.py` and
+`aember/ed25519.py` (pure Python, RFC 8032) are copies of aember's
+`aember-cli/aember/utils/` modules: change both together.
 
 Repository: <https://github.com/ajdariarian94/aember-build-helper>
 (public). Like the sibling repos: branch off `main` and merge through a PR.
@@ -34,10 +40,12 @@ aember-cli/                      the `aember` CLI (same place and name as in the
   pyproject.toml                 script `aember`; no dependencies
   aember/cli.py                  argparse: init, check, build, install
   aember/manifest.py             aember-container.json → Manifest (validation, defaults)
-  aember/contract.py             aember's contract: paths, lxc.container.conf, containers.json entry
+  aember/contract.py             aember's contract: lxc.container.conf, config.json, containers.json entry
+  aember/aember_package.py       the .aember format (write, read, verify; copy of aember's)
+  aember/ed25519.py              Ed25519 signing in pure Python (copy of aember's)
   aember/rootfs.py               rootfs as ONE tar stream → `mksquashfs - out -tar`
   aember/libs.py                 NEEDED + interpreter resolution from a sysroot (readelf)
-  aember/install.py              copy into an overlay, merge containers.json
+  aember/install.py              package into an overlay's var/lib/aember/packages/, merge containers.json
   tests/test_*.py                unittest (stdlib); squashfs/gcc tests skip without the tools
 project-cli/aember_project/       shared CLI of the C++ container repos (aember-stats, -monitor,
                                  -auth, fleet's agent): sdk, build, pack, install, test, mutate, all

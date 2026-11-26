@@ -3,7 +3,7 @@ aember (aember-build-helper): pack your project into an aember-ready LXC contain
 
     aember init                 write an example aember-container.json
     aember check                validate the manifest
-    aember build                build the container into aember-out/<name>/
+    aember build                build the container's .aember into aember-out/<name>/
     aember install <aember>     add it to an aember board's rootfs overlay
 
 Python 3.10+ standard library only; needs mksquashfs (squashfs-tools 4.6+),
@@ -15,10 +15,12 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
+import shutil
 import sys
 from pathlib import Path
 
-from . import __version__, contract
+from . import __version__, aember_package, contract
 from .install import install, overlay_dir
 from .manifest import EXAMPLE, PLATFORMS, Manifest, ManifestError, load
 from .rootfs import build_squashfs
@@ -28,12 +30,20 @@ DEFAULT_MANIFEST = "aember-container.json"
 DEFAULT_OUT = "aember-out"
 
 
-def build(m: Manifest, out_root: Path) -> Path:
-    """Build the bundle out_root/<name>/; returns its directory."""
+def build(m: Manifest, out_root: Path, key: Path | None = None) -> Path:
+    """
+    Build the bundle out_root/<name>/: <name>.aember (the package, signed
+    with @p key, a .key file, unless None), container.json (its
+    containers.json entry), and its config.json and lxc.container.conf
+    for reading. Returns its directory.
+    """
     bundle = out_root / m.name
-    image_dir = bundle / "overlay" / contract.image_dir(m.name).lstrip("/")
+    if bundle.exists():
+        shutil.rmtree(bundle)
+    bundle.mkdir(parents=True)
     log.info("Packing %s for %s (%s rootfs)", m.name, m.arch, m.source)
-    config = build_squashfs(m, image_dir / f"{m.name}.squashfs")
+    image = bundle / "image.squashfs.tmp"
+    config = build_squashfs(m, image)
 
     # A Docker image's own settings fill what the manifest leaves out.
     command = m.command or config.command
@@ -44,11 +54,23 @@ def build(m: Manifest, out_root: Path) -> Path:
     if config.workdir and not m.workdir:
         m.workdir = config.workdir
 
-    (image_dir / "lxc.container.conf").write_text(contract.lxc_config(m))
-    entry = contract.containers_entry(m, command)
+    lxc = contract.lxc_config(m)
+    settings = contract.config_json(m, command)
+    seed = aember_package.read_private_key(key) if key else None
+    package = bundle / contract.package_name(m.name)
+    footer = aember_package.write_package(package, settings, lxc, image, seed)
+    image.unlink()
+    (bundle / "config.json").write_text(json.dumps(settings, indent=2) + "\n")
+    (bundle / "lxc.container.conf").write_text(lxc)
+    entry = contract.containers_entry(m)
     (bundle / "container.json").write_text(json.dumps(entry, indent=2) + "\n")
-    size = (image_dir / f"{m.name}.squashfs").stat().st_size
-    log.info("Built %s (%.1f MB): %s", m.name, size / 2**20, bundle)
+    log.info(
+        "Built %s (%.1f MB, %s): %s",
+        package.name,
+        package.stat().st_size / 2**20,
+        f"signed, key {footer.key_id.hex()}" if footer.signed else "unsigned",
+        bundle,
+    )
     return bundle
 
 
@@ -74,6 +96,13 @@ def main(argv: list[str] | None = None) -> int:
     p_build.add_argument("-o", "--out", type=Path, default=Path(DEFAULT_OUT))
     p_build.add_argument(
         "--rootfs-dir", type=Path, help="Use this directory as the rootfs (CMake)"
+    )
+    p_build.add_argument(
+        "--key",
+        type=Path,
+        default=os.environ.get("AEMBER_PACKAGE_KEY") or None,
+        help="Sign the package with this .key (default: $AEMBER_PACKAGE_KEY; "
+        "none: unsigned, for boards with allow_unsigned)",
     )
 
     p_inst = sub.add_parser("install", help="Add a built container to aember")
@@ -106,10 +135,10 @@ def main(argv: list[str] | None = None) -> int:
                 m.docker_image = m.dockerfile = None
                 if not m.command:
                     raise ManifestError("--rootfs-dir needs 'command' in the manifest")
-            build(m, args.out)
+            build(m, args.out, args.key)
         elif args.cmd == "install":
             bundle = args.out / m.name
-            if not (bundle / "container.json").exists():
+            if not (bundle / contract.package_name(m.name)).exists():
                 raise ManifestError(f"{bundle}: not built yet (aember build)")
             overlay = overlay_dir(args.target, m.arch)
             for w in install(bundle, overlay):
@@ -120,7 +149,7 @@ def main(argv: list[str] | None = None) -> int:
                 m.name,
                 overlay,
             )
-    except (ManifestError, RuntimeError) as e:
+    except (ManifestError, RuntimeError, aember_package.PackageError) as e:
         log.error("error: %s", e)
         return 1
     return 0
